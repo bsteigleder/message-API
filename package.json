@@ -4,5 +4,10 @@
   "description": "Small messaging API technical assignment",
   "private": true,
   "type": "module",
-  "scripts": {}
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
 }
