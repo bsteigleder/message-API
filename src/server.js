@@ -1,5 +1,5 @@
 import express from 'express';
-import { messageRouter } from './messageRoutes.js';
+import { messageRouter } from './routes/messageRoutes.js';
 
 const app = express();
 const port = process.env.PORT || 3000;

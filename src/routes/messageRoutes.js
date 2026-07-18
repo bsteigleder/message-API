@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createMessage } from './messageRepository.js';
+import { createMessage } from '../repositories/messageRepository.js';
 
 export const messageRouter = Router();
 

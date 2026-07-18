@@ -1,4 +1,4 @@
-import { db } from './database.js';
+import { db } from '../persistence/database.js';
 
 export function createMessage(message, callback) {
   db.run(
