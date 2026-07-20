@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createMessage, findMessageByText } from '../repositories/messageRepository.js';
+import { createMessage, findMessageById, findMessageByText } from '../repositories/messageRepository.js';
 
 export const messageRouter = Router();
 
@@ -22,6 +22,24 @@ function validateMessage(message) {
 
   return null;
 }
+
+messageRouter.get('/:id', async (req, res) => {
+  try {
+    const message = await findMessageById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+
+    return res.json({
+      id: message.id,
+      message: message.message,
+      createdAt: message.created_at,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Could not get message' });
+  }
+});
 
 messageRouter.post('/', async (req, res) => {
   const { message } = req.body;

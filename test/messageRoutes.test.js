@@ -62,3 +62,27 @@ describe('POST /messages', () => {
     });
   });
 });
+
+
+describe('GET /messages/:id', () => {
+  it('returns a message by id', async () => {
+    const createdMessage = await request(app)
+      .post('/messages')
+      .send({ message: 'Find me' });
+
+    const response = await request(app)
+      .get(`/messages/${createdMessage.body.id}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(createdMessage.body);
+  });
+
+  it('returns 404 when the message does not exist', async () => {
+    const response = await request(app).get('/messages/999');
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({
+      error: 'Message not found',
+    });
+  });
+});

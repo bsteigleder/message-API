@@ -1,5 +1,22 @@
 import { db } from '../persistence/database.js';
 
+export function findMessageById(id) {
+  return new Promise((resolve, reject) => {
+    db.get(
+      'SELECT id, message, created_at FROM messages WHERE id = ?',
+      [id],
+      (error, row) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(row);
+      },
+    );
+  });
+}
+
 export function findMessageByText(message) {
   return new Promise((resolve, reject) => {
     db.get(
