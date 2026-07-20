@@ -69,6 +69,7 @@ Request body:
 Validation rules:
 
 - Message is required.
+- Leading and trailing whitespace is trimmed before validation and storage, so length checks apply to the trimmed message.
 - Message must be at least 5 characters.
 - Message must be at most 200 characters.
 - Message must contain at least one alphanumeric character.
