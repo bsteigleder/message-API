@@ -222,6 +222,13 @@ created_at  TEXT NOT NULL
 
 API responses expose `created_at` as `createdAt`.
 
+## Logging
+
+The service writes structured JSON logs (one line per event) to stdout, so they can be collected by any container log driver or log aggregator without extra configuration.
+
+- Every request logs a `request completed` event with method, path, status code, and duration.
+- Unhandled errors (including malformed JSON bodies), uncaught exceptions, and unhandled promise rejections are logged with the error message and stack trace before the process responds or exits.
+
 ## Design Notes
 
 - The API is RESTful and uses JSON request/response bodies.
