@@ -238,3 +238,11 @@ The service writes structured JSON logs (one line per event) to stdout, so they 
 - Messages are hard-deleted because no audit or recovery requirement was specified.
 - Request and response statistics are kept in memory and reset when the service restarts.
 - Message totals are read from SQLite so they reflect the current stored data.
+
+## Assumptions & Trade-offs
+
+- **No authentication or authorization.** The assignment describes an internal tool, so the API is left open. In a real deployment it would sit behind a gateway or API keys before being exposed beyond a trusted network.
+- **In-memory metrics, not persisted.** Request/response/submission counters live in process memory instead of a time-series store. This avoids extra infrastructure and matches "persistence beyond runtime is not required," but it means counters reset on restart and don't aggregate across multiple instances — a multi-instance deployment would need a shared backend (e.g., Prometheus scraping each instance, or a push-based store).
+- **SQLite as a single file.** Chosen for zero-setup portability, not for production scale. It's fine for a single instance, but concurrent writes across multiple processes/instances aren't its strength; the repository layer isolates all SQL, so swapping in Postgres/MySQL later is a contained change.
+- **Duplicate detection is check-then-insert, not fully atomic.** The API queries for an existing message before inserting, then falls back to the database's `UNIQUE` constraint (mapped to `409 Conflict`) as a safety net if two requests race each other.
+- **Hard delete, no soft delete/versioning.** Deleted messages are unrecoverable. Acceptable here since no audit/recovery requirement was specified; a production system handling user data might prefer soft deletes.
