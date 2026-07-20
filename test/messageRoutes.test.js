@@ -233,3 +233,45 @@ describe('GET /stats/service', () => {
     expect(response.body.uptimeSeconds).toBeGreaterThanOrEqual(0);
   });
 });
+describe('DELETE /messages/:id', () => {
+  it('deletes a message by id', async () => {
+    const createdMessage = await request(app)
+      .post('/messages')
+      .send({ message: 'Delete me' });
+
+    const deleteResponse = await request(app)
+      .delete(`/messages/${createdMessage.body.id}`);
+
+    expect(deleteResponse.status).toBe(204);
+
+    const getResponse = await request(app)
+      .get(`/messages/${createdMessage.body.id}`);
+
+    expect(getResponse.status).toBe(404);
+  });
+
+  it('returns 404 when deleting a missing message', async () => {
+    const response = await request(app).delete('/messages/999');
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({
+      error: 'Message not found',
+    });
+  });
+});
+
+describe('DELETE /messages', () => {
+  it('deletes all messages', async () => {
+    await request(app).post('/messages').send({ message: 'First delete all' });
+    await request(app).post('/messages').send({ message: 'Second delete all' });
+
+    const deleteResponse = await request(app).delete('/messages');
+
+    expect(deleteResponse.status).toBe(204);
+
+    const listResponse = await request(app).get('/messages');
+
+    expect(listResponse.body.data).toEqual([]);
+    expect(listResponse.body.pagination.total).toBe(0);
+  });
+});

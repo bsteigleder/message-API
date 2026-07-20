@@ -108,3 +108,33 @@ export function createMessage(message) {
     );
   });
 }
+
+export function deleteMessageById(id) {
+  return new Promise((resolve, reject) => {
+    db.run(
+      'DELETE FROM messages WHERE id = ?',
+      [id],
+      function deleteMessage(error) {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(this.changes);
+      },
+    );
+  });
+}
+
+export function deleteAllMessages() {
+  return new Promise((resolve, reject) => {
+    db.run('DELETE FROM messages', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}

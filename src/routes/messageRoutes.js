@@ -2,6 +2,8 @@ import { Router } from 'express';
 import {
   countMessages,
   createMessage,
+  deleteAllMessages,
+  deleteMessageById,
   findMessageById,
   findMessageByText,
   listMessages,
@@ -171,5 +173,29 @@ messageRouter.post('/', async (req, res) => {
     }
 
     return res.status(500).json({ error: 'Could not create message' });
+  }
+});
+
+messageRouter.delete('/', async (req, res) => {
+  try {
+    await deleteAllMessages();
+
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(500).json({ error: 'Could not delete messages' });
+  }
+});
+
+messageRouter.delete('/:id', async (req, res) => {
+  try {
+    const deletedMessages = await deleteMessageById(req.params.id);
+
+    if (deletedMessages === 0) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(500).json({ error: 'Could not delete message' });
   }
 });
