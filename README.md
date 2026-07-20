@@ -317,21 +317,6 @@ Each layer has one responsibility, and requests only flow downward:
 1. **Routes** (`routes/`) own HTTP concerns — parsing query params, validating input, choosing status codes, shaping the response body. They never touch SQLite directly.
 2. **Repositories** (`repositories/`) hold all SQL. Routes call repository functions and get back plain JS values, which keeps query logic out of the HTTP layer and in one place per entity.
 3. **Persistence** (`persistence/database.js`) owns the raw SQLite connection and schema creation.
-4. Cross-cutting concerns — request logging, in-memory metrics, and error handling — are implemented once as Express middleware and a single global error handler in `app.js`, instead of being repeated inside each route.
-
-```mermaid
-flowchart LR
-    Client -->|HTTP request| Middleware
-    subgraph Middleware["app.js middleware chain"]
-        M1["express.json()"] --> M2["loggingMiddleware"] --> M3["metricsMiddleware"]
-    end
-    Middleware --> Routes["Routes\nmessageRoutes / statsRoutes"]
-    Routes --> Repo["messageRepository"]
-    Repo --> DB[("SQLite\nmessages.sqlite")]
-    Routes -->|success| Client
-    Routes -->|throws| ErrorHandler["global error handler"]
-    ErrorHandler --> Client
-```
 
 ## Logging
 
