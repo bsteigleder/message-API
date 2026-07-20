@@ -28,3 +28,9 @@ statsRouter.get('/requests', (req, res) => {
 statsRouter.get('/responses', (req, res) => {
   res.json(getResponseStats());
 });
+
+statsRouter.get('/service', (req, res) => {
+  res.json({
+    uptimeSeconds: Math.floor(process.uptime()),
+  });
+});

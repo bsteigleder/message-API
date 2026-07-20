@@ -222,3 +222,14 @@ describe('GET /stats/responses', () => {
     });
   });
 });
+describe('GET /stats/service', () => {
+  it('returns service uptime', async () => {
+    const response = await request(app).get('/stats/service');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      uptimeSeconds: expect.any(Number),
+    });
+    expect(response.body.uptimeSeconds).toBeGreaterThanOrEqual(0);
+  });
+});
