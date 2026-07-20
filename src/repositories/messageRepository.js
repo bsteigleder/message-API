@@ -1,5 +1,63 @@
 import { db } from '../persistence/database.js';
 
+function buildListFilters({ createdSince, query }) {
+  const conditions = [];
+  const params = [];
+
+  if (createdSince) {
+    conditions.push('created_at >= ?');
+    params.push(createdSince);
+  }
+
+  if (query) {
+    conditions.push('message LIKE ?');
+    params.push(`%${query}%`);
+  }
+
+  return {
+    where: conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '',
+    params,
+  };
+}
+
+export function listMessages({ limit, offset, createdSince, query }) {
+  const filters = buildListFilters({ createdSince, query });
+
+  return new Promise((resolve, reject) => {
+    db.all(
+      `SELECT id, message, created_at FROM messages ${filters.where} ORDER BY id ASC LIMIT ? OFFSET ?`,
+      [...filters.params, limit, offset],
+      (error, rows) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(rows);
+      },
+    );
+  });
+}
+
+export function countMessages({ createdSince, query } = {}) {
+  const filters = buildListFilters({ createdSince, query });
+
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT COUNT(*) as total FROM messages ${filters.where}`,
+      filters.params,
+      (error, row) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(row.total);
+      },
+    );
+  });
+}
+
 export function findMessageById(id) {
   return new Promise((resolve, reject) => {
     db.get(

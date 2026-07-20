@@ -86,3 +86,85 @@ describe('GET /messages/:id', () => {
     });
   });
 });
+
+describe('GET /messages', () => {
+  it('returns messages with page and limit', async () => {
+    await request(app).post('/messages').send({ message: 'First message' });
+    await request(app).post('/messages').send({ message: 'Second message' });
+    await request(app).post('/messages').send({ message: 'Third message' });
+
+    const response = await request(app).get('/messages?page=2&limit=2');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data.map((message) => message.message)).toEqual([
+      'Third message',
+    ]);
+    expect(response.body.pagination).toEqual({
+      page: 2,
+      limit: 2,
+      total: 3,
+    });
+  });
+
+  it('rejects limits above the maximum', async () => {
+    const response = await request(app).get('/messages?limit=101');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: 'Limit must be between 1 and 100',
+    });
+  });
+});
+describe('GET /messages createdSince filter', () => {
+  it('filters messages by date', async () => {
+    await request(app).post('/messages').send({ message: 'Date filter message' });
+
+    const response = await request(app).get('/messages?createdSince=1970-01-01');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.map((message) => message.message)).toContain('Date filter message');
+  });
+
+  it('filters messages by datetime', async () => {
+    await request(app).post('/messages').send({ message: 'Datetime filter message' });
+
+    const response = await request(app).get('/messages?createdSince=2999-01-01T00:00:00.000Z');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual([]);
+    expect(response.body.pagination.total).toBe(0);
+  });
+
+  it('rejects invalid createdSince values', async () => {
+    const response = await request(app).get('/messages?createdSince=not-a-date');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: 'createdSince must be a valid date or datetime',
+    });
+  });
+});
+describe('GET /messages query filter', () => {
+  it('filters messages by query', async () => {
+    await request(app).post('/messages').send({ message: 'Alpha message' });
+    await request(app).post('/messages').send({ message: 'Beta message' });
+
+    const response = await request(app).get('/messages?query=Alpha');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.map((message) => message.message)).toEqual([
+      'Alpha message',
+    ]);
+    expect(response.body.pagination.total).toBe(1);
+  });
+
+  it('rejects empty query filters', async () => {
+    const response = await request(app).get('/messages?query=');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: 'query must not be empty',
+    });
+  });
+});
