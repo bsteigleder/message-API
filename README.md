@@ -145,9 +145,13 @@ Deletes all stored messages and returns `204 No Content`.
 
 ## Statistics
 
+These endpoints exist to support operations: capacity planning, spotting misbehaving clients, and confirming the service is healthy after a deploy.
+
 ### Message Stats
 
 `GET /stats/messages`
+
+Purpose: tracks storage growth (`totalStored`, useful for capacity planning) and the ratio of valid to invalid submissions (`submissions`, useful for spotting client-side bugs or misuse — a spike in `invalid` usually means a caller is sending malformed data).
 
 ```json
 {
@@ -162,6 +166,8 @@ Deletes all stored messages and returns `204 No Content`.
 ### Request Stats
 
 `GET /stats/requests`
+
+Purpose: shows overall traffic volume and its breakdown by endpoint (`byType`), which helps identify which operations drive load and informs capacity/scaling decisions.
 
 ```json
 {
@@ -179,6 +185,8 @@ Deletes all stored messages and returns `204 No Content`.
 
 `GET /stats/responses`
 
+Purpose: surfaces API health through the distribution of status codes. A rising share of `4xx` responses points to bad client input or usage patterns; a rising share of `5xx` points to server-side problems that need investigation.
+
 ```json
 {
   "total": 25,
@@ -195,6 +203,8 @@ Deletes all stored messages and returns `204 No Content`.
 ### Service Stats
 
 `GET /stats/service`
+
+Purpose: reports how long the process has been running (`uptimeSeconds`), which is useful for confirming a deploy or restart happened and for basic liveness checks.
 
 ```json
 { "uptimeSeconds": 120 }
