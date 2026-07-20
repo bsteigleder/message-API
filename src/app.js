@@ -14,3 +14,12 @@ app.get('/health', (req, res) => {
 
 app.use('/messages', messageRouter);
 app.use('/stats', statsRouter);
+
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Malformed JSON body' });
+  }
+
+  console.error(err);
+  return res.status(500).json({ error: 'Internal server error' });
+});
