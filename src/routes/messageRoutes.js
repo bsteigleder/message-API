@@ -141,7 +141,8 @@ messageRouter.get('/:id', async (req, res) => {
 });
 
 messageRouter.post('/', async (req, res) => {
-  const { message } = req.body;
+  const { message: rawMessage } = req.body;
+  const message = typeof rawMessage === 'string' ? rawMessage.trim() : rawMessage;
   const validationError = validateMessage(message);
 
   if (validationError) {
