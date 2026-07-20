@@ -52,6 +52,8 @@ The test suite uses Jest and Supertest with an in-memory SQLite database.
 
 `GET /health`
 
+Status: `200 OK`
+
 ```json
 { "status": "ok" }
 ```
@@ -75,7 +77,7 @@ Validation rules:
 - Message must contain at least one alphanumeric character.
 - Message must not duplicate an existing stored message.
 
-Success response:
+Success response — `201 Created`:
 
 ```json
 {
@@ -85,7 +87,23 @@ Success response:
 }
 ```
 
-Possible errors: `400 Bad Request`, `409 Conflict`, `500 Internal Server Error`.
+Validation error — `400 Bad Request`:
+
+```json
+{ "error": "Message must be at least 5 characters" }
+```
+
+Duplicate message — `409 Conflict`:
+
+```json
+{ "error": "Message already exists" }
+```
+
+Unexpected failure — `500 Internal Server Error`:
+
+```json
+{ "error": "Could not create message" }
+```
 
 ### List Messages
 
@@ -107,7 +125,7 @@ GET /messages?page=1&limit=20&createdSince=2026-07-20
 GET /messages?page=1&limit=20&createdSince=2026-07-20T10:30:00.000Z
 ```
 
-Response:
+Success response — `200 OK`:
 
 ```json
 {
@@ -126,23 +144,51 @@ Response:
 }
 ```
 
+Invalid query parameter — `400 Bad Request`:
+
+```json
+{ "error": "Limit must be between 1 and 100" }
+```
+
 ### Get Message By ID
 
 `GET /messages/:id`
 
-Returns one message or `404 Not Found` when it does not exist.
+Success response — `200 OK`:
+
+```json
+{
+  "id": 1,
+  "message": "Hello world",
+  "createdAt": "2026-07-20T12:00:00.000Z"
+}
+```
+
+Not found — `404 Not Found`:
+
+```json
+{ "error": "Message not found" }
+```
 
 ### Delete Message By ID
 
 `DELETE /messages/:id`
 
-Returns `204 No Content` when deleted or `404 Not Found` when it does not exist.
+Success response: `204 No Content` (empty body).
+
+Not found — `404 Not Found`:
+
+```json
+{ "error": "Message not found" }
+```
 
 ### Reset Messages
 
 `DELETE /messages`
 
-Deletes all stored messages and returns `204 No Content`.
+Deletes all stored messages.
+
+Success response: `204 No Content` (empty body).
 
 ## Statistics
 
@@ -151,6 +197,8 @@ These endpoints exist to support operations: capacity planning, spotting misbeha
 ### Message Stats
 
 `GET /stats/messages`
+
+Status: `200 OK`
 
 Purpose: tracks storage growth (`totalStored`, useful for capacity planning) and the ratio of valid to invalid submissions (`submissions`, useful for spotting client-side bugs or misuse — a spike in `invalid` usually means a caller is sending malformed data).
 
@@ -167,6 +215,8 @@ Purpose: tracks storage growth (`totalStored`, useful for capacity planning) and
 ### Request Stats
 
 `GET /stats/requests`
+
+Status: `200 OK`
 
 Purpose: shows overall traffic volume and its breakdown by endpoint (`byType`), which helps identify which operations drive load and informs capacity/scaling decisions.
 
@@ -186,6 +236,8 @@ Purpose: shows overall traffic volume and its breakdown by endpoint (`byType`), 
 
 `GET /stats/responses`
 
+Status: `200 OK`
+
 Purpose: surfaces API health through the distribution of status codes. A rising share of `4xx` responses points to bad client input or usage patterns; a rising share of `5xx` points to server-side problems that need investigation.
 
 ```json
@@ -204,6 +256,8 @@ Purpose: surfaces API health through the distribution of status codes. A rising 
 ### Service Stats
 
 `GET /stats/service`
+
+Status: `200 OK`
 
 Purpose: reports how long the process has been running (`uptimeSeconds`), which is useful for confirming a deploy or restart happened and for basic liveness checks.
 
