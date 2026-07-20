@@ -4,18 +4,21 @@ let app;
 let initializeDatabase;
 let clearMessages;
 let closeDatabase;
+let resetMetrics;
 
 beforeAll(async () => {
   process.env.DATABASE_PATH = ':memory:';
 
   ({ app } = await import('../src/app.js'));
   ({ initializeDatabase, clearMessages, closeDatabase } = await import('../src/persistence/database.js'));
+  ({ resetMetrics } = await import('../src/metrics/metricsStore.js'));
 
   await initializeDatabase();
 });
 
 beforeEach(async () => {
   await clearMessages();
+  resetMetrics();
 });
 
 afterAll(async () => {
@@ -165,6 +168,57 @@ describe('GET /messages query filter', () => {
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
       error: 'query must not be empty',
+    });
+  });
+});
+describe('GET /stats/messages', () => {
+  it('returns stored message and submission totals', async () => {
+    await request(app).post('/messages').send({ message: 'Stats message' });
+    await request(app).post('/messages').send({ message: 'bad' });
+
+    const response = await request(app).get('/stats/messages');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      totalStored: 1,
+      submissions: {
+        valid: 1,
+        invalid: 1,
+      },
+    });
+  });
+});
+
+describe('GET /stats/requests', () => {
+  it('returns request totals by type', async () => {
+    await request(app).get('/health');
+    await request(app).post('/messages').send({ message: 'Request stats' });
+
+    const response = await request(app).get('/stats/requests');
+
+    expect(response.status).toBe(200);
+    expect(response.body.total).toBe(2);
+    expect(response.body.byType).toEqual({
+      'GET /health': 1,
+      'POST /messages': 1,
+    });
+  });
+});
+
+describe('GET /stats/responses', () => {
+  it('returns response totals by status code', async () => {
+    await request(app).get('/health');
+    await request(app).post('/messages').send({ message: 'bad' });
+
+    const response = await request(app).get('/stats/responses');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      total: 2,
+      byStatusCode: {
+        '200': 1,
+        '400': 1,
+      },
     });
   });
 });

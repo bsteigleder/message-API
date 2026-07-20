@@ -6,6 +6,7 @@ import {
   findMessageByText,
   listMessages,
 } from '../repositories/messageRepository.js';
+import { recordMessageSubmission } from '../metrics/metricsStore.js';
 
 export const messageRouter = Router();
 
@@ -142,6 +143,7 @@ messageRouter.post('/', async (req, res) => {
   const validationError = validateMessage(message);
 
   if (validationError) {
+    recordMessageSubmission('invalid');
     return res.status(400).json({ error: validationError });
   }
 
@@ -149,6 +151,7 @@ messageRouter.post('/', async (req, res) => {
     const existingMessage = await findMessageByText(message);
 
     if (existingMessage) {
+      recordMessageSubmission('invalid');
       return res.status(409).json({ error: 'Message already exists' });
     }
 
@@ -159,9 +162,11 @@ messageRouter.post('/', async (req, res) => {
 
     const id = await createMessage(newMessage);
 
+    recordMessageSubmission('valid');
     return res.status(201).json({ id, ...newMessage });
   } catch (error) {
     if (error.code === 'SQLITE_CONSTRAINT') {
+      recordMessageSubmission('invalid');
       return res.status(409).json({ error: 'Message already exists' });
     }
 
