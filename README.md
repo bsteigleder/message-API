@@ -277,6 +277,62 @@ created_at  TEXT NOT NULL
 
 API responses expose `created_at` as `createdAt`.
 
+## Architecture
+
+### Technology Stack
+
+- **Runtime:** Node.js (ES modules)
+- **Web framework:** Express 5 — minimal setup and a well-known surface for a small REST API
+- **Database:** SQLite via the `sqlite3` driver — a single embedded file, no separate database server to install or configure
+- **Testing:** Jest + Supertest — integration tests that exercise the app over HTTP against an in-memory SQLite database
+- **Logging:** a small hand-rolled structured logger ([src/logging/logger.js](src/logging/logger.js)) that writes JSON lines to stdout, avoiding an external logging dependency at this scale
+- **Metrics:** an in-memory counters module ([src/metrics/metricsStore.js](src/metrics/metricsStore.js)), avoiding an external metrics backend at this scale
+
+### Project Structure
+
+```text
+src/
+  app.js                    Express app: middleware wiring, routes, global error handler
+  server.js                 process entrypoint: boots the database, starts listening
+  routes/
+    messageRoutes.js        /messages endpoints: validation and HTTP concerns
+    statsRoutes.js          /stats endpoints
+  repositories/
+    messageRepository.js    all SQL for messages, isolated from the HTTP layer
+  persistence/
+    database.js             SQLite connection and schema setup
+  middleware/
+    loggingMiddleware.js    structured request logging
+    metricsMiddleware.js    in-memory request/response counters
+  metrics/
+    metricsStore.js         metrics state and accessors
+  logging/
+    logger.js               structured JSON logger
+```
+
+### Layering & Request Flow
+
+Each layer has one responsibility, and requests only flow downward:
+
+1. **Routes** (`routes/`) own HTTP concerns — parsing query params, validating input, choosing status codes, shaping the response body. They never touch SQLite directly.
+2. **Repositories** (`repositories/`) hold all SQL. Routes call repository functions and get back plain JS values, which keeps query logic out of the HTTP layer and in one place per entity.
+3. **Persistence** (`persistence/database.js`) owns the raw SQLite connection and schema creation.
+4. Cross-cutting concerns — request logging, in-memory metrics, and error handling — are implemented once as Express middleware and a single global error handler in `app.js`, instead of being repeated inside each route.
+
+```mermaid
+flowchart LR
+    Client -->|HTTP request| Middleware
+    subgraph Middleware["app.js middleware chain"]
+        M1["express.json()"] --> M2["loggingMiddleware"] --> M3["metricsMiddleware"]
+    end
+    Middleware --> Routes["Routes\nmessageRoutes / statsRoutes"]
+    Routes --> Repo["messageRepository"]
+    Repo --> DB[("SQLite\nmessages.sqlite")]
+    Routes -->|success| Client
+    Routes -->|throws| ErrorHandler["global error handler"]
+    ErrorHandler --> Client
+```
+
 ## Logging
 
 The service writes structured JSON logs (one line per event) to stdout, so they can be collected by any container log driver or log aggregator without extra configuration.
